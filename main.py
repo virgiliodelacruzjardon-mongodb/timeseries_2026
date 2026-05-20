@@ -69,10 +69,9 @@ def generate_sensor_data(num_records=10000):
 
     return data
 
-
 # Generate data
-print("📊 Generating 100,000 sensor readings...")
-sensor_data = generate_sensor_data(100000)  # 100k intervals x 5 sensors
+print("📊 Generating 100,000 sensor intervals...")
+sensor_data = generate_sensor_data(100000)  # 100k intervals x 5 sensors = 500k documents
 
 # Insert into Time Series Collection
 print("⏱️ Inserting into Time Series collection...")
@@ -112,9 +111,16 @@ print(f"Space Savings: {((normal_size - ts_size) / normal_size * 100):.2f}%\n")
 print("🚀 QUERY PERFORMANCE COMPARISON")
 print("=" * 60)
 
-# Query 1: Range query
-query_start = datetime.now() - timedelta(days=1)
-query_end = datetime.now()
+# Query against the actual generated timestamp range
+data_start = sensor_data[0]["timestamp"]
+data_end = sensor_data[-1]["timestamp"]
+
+# Last 24 hours of the generated dataset
+query_end = data_end
+query_start = max(data_start, data_end - timedelta(days=1))
+
+print(f"Generated data range: {data_start} -> {data_end}")
+print(f"Query range: {query_start} -> {query_end}\n")
 
 # Time Series Collection Query
 start = time.time()
@@ -140,7 +146,7 @@ normal_result = list(
 )
 normal_query_time = time.time() - start
 
-print("Query 1: Range query (last 24 hours, specific sensor)")
+print("Query 1: Range query (last 24 hours of generated data, specific sensor)")
 print(f" Time Series: {ts_query_time:.4f}s | Found: {len(ts_result)} docs")
 print(f" Normal: {normal_query_time:.4f}s | Found: {len(normal_result)} docs")
 if ts_query_time > 0:
@@ -180,7 +186,7 @@ start = time.time()
 normal_agg_result = list(normal_collection.aggregate(pipeline))
 normal_agg_time = time.time() - start
 
-print("Query 2: Hourly aggregation (avg, max, min temperature)")
+print("Query 2: Hourly aggregation over last 24 hours of generated data")
 print(f" Time Series: {ts_agg_time:.4f}s | Buckets: {len(ts_agg_result)}")
 print(f" Normal: {normal_agg_time:.4f}s | Buckets: {len(normal_agg_result)}")
 if ts_agg_time > 0:
@@ -199,7 +205,7 @@ window_pipeline = [
     {
         "$match": {
             "metadata.sensor_id": "sensor_001",
-            "timestamp": {"$gte": query_start},
+            "timestamp": {"$gte": query_start, "$lte": query_end},
         }
     },
     {

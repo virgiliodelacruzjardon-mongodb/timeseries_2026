@@ -5,7 +5,7 @@ set -e
 pip install --upgrade pip
 pip install pymongo
 
-export MONGODB_URI='mongodb+srv://admin:<db_password>@<atlas_cluster_url>/?appName=<cluster_name>'
+export MONGODB_URI='mongodb+srv://admin:passwordone@m10vdj.rjcj1k.mongodb.net/?appName=m10vdj'
 
 echo "Virtual environment activated."
 echo "pymongo installed."
